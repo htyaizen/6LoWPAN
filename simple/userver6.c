@@ -26,23 +26,51 @@
 #include <sys/ioctl.h>
 #include <net/if.h>
 
-#define PORT 3000
-#define MESSAGE "hello"
+
+#define PRINT_FILE 0
+
+#define DEBUG 1
+#if DEBUG
+#define PRINTF(...) printf(__VA_ARGS__)
+#else
+#define PRINTF(...)
+#endif
 
 
-int main(void)
+
+
+void usage(void);
+
+
+int main(int argc, char **argv)
 {
+
   int sock;
   socklen_t clilen;
   struct sockaddr_in6 server_addr, client_addr;
   char buffer[40];
   char addrbuf[INET6_ADDRSTRLEN];
-
-  FILE* data_file = NULL;
-
-
-
   struct ifreq ifr;
+  
+  const char *interface;
+  int port;
+
+#if PRINT_FILE
+  FILE* data_file = NULL;
+#endif
+
+
+  /* Check arguments */
+  if(argc < 3){
+    usage();
+    exit(0);
+  }else{
+    interface = argv[1];
+    port = atoi(argv[2]);
+    PRINTF("Connection with %s on port %d\n", interface, port);
+  }
+
+
 
   /* create a DGRAM (UDP) socket in the INET6 (IPv6) protocol */
   sock = socket(PF_INET6, SOCK_DGRAM, 0);
@@ -54,7 +82,9 @@ int main(void)
 
 
   memset(&ifr, 0, sizeof(ifr));
-  snprintf(ifr.ifr_name, sizeof(ifr.ifr_name), "tun0");
+  snprintf(ifr.ifr_name, sizeof(ifr.ifr_name), "%s",interface);
+
+
   if (setsockopt(sock, SOL_SOCKET, SO_BINDTODEVICE, (void *)&ifr, sizeof(ifr)) < 0) {
       perror("Set Interface failed");
       exit(4);  
@@ -86,7 +116,7 @@ int main(void)
   server_addr.sin6_addr = in6addr_any;
 
   /* the port we are going to listen on, in network byte order */
-  server_addr.sin6_port = htons(PORT);
+  server_addr.sin6_port = htons(port);
 
   /* associate the socket with the address and port */
   if (bind(sock, (struct sockaddr *)&server_addr,
@@ -108,16 +138,17 @@ int main(void)
     }
 
 
+#if PRINT_FILE
     data_file = fopen("data.csv", "a");
     if (data_file != NULL)
     {
       fprintf(data_file, "%d.%d\n",(int) buffer[0],(int) buffer[1] );
       fclose(data_file);
     }
-
+#endif
 
     /* now client_addr contains the address of the client */
-    printf("Temperature %d.%d from %s\n",(int) buffer[0],(int) buffer[1],
+    PRINTF("Temperature %d.%d from %s\n",(int) buffer[0],(int) buffer[1],
 	   inet_ntop(AF_INET6, &client_addr.sin6_addr, addrbuf,
 		     INET6_ADDRSTRLEN));
 
@@ -134,4 +165,19 @@ int main(void)
   }
   
   return 0;
+}
+
+
+
+
+
+
+
+void usage(void){
+
+  PRINTF("usage:\n");
+  PRINTF("First parameter: INTERFACE\n");
+  PRINTF("Second parameter: PORT\n");
+  PRINTF("ex: sudo ./userver6 eth0 3000\n");
+
 }
