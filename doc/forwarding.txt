@@ -1,0 +1,4 @@
+To activate ipv6 forwarding, edit file /etc/sysctl.conf and set to 1 the line:
+net.ipv6.conf.all.forwarding=1
+
+(don't forget to uncomment the line)

@@ -1,0 +1,4 @@
+*.a
+*.bin
+obj_*
+symbols.*

@@ -1,0 +1,14 @@
+
+***************************************************************************************
+*																		Compilation																				*
+***************************************************************************************
+
+simple:
+gcc userver6.c -o userver6
+
+tunslip6:
+gcc tunslip6.c -o tunslip6
+
+webserver:
+gcc webserver.c -o webserver -lpthread
+
